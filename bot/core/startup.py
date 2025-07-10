@@ -209,12 +209,17 @@ async def save_settings():
         )
     if await database.db.settings.qbittorrent.find_one({"_id": TgClient.ID}) is None:
         await database.save_qbit_settings()
+
     if await database.db.settings.nzb.find_one({"_id": TgClient.ID}) is None:
-        async with aiopen("sabnzbd/SABnzbd.ini", "rb+") as pf:
-            nzb_conf = await pf.read()
-        await database.db.settings.nzb.update_one(
-            {"_id": TgClient.ID}, {"$set": {"SABnzbd__ini": nzb_conf}}, upsert=True
-        )
+        try:
+            async with aiopen("sabnzbd/SABnzbd.ini", "rb+") as pf:
+                nzb_conf = await pf.read()
+            await database.db.settings.nzb.update_one(
+                {"_id": TgClient.ID}, {"$set": {"SABnzbd__ini": nzb_conf}}, upsert=True
+            )
+        except FileNotFoundError:
+            LOGGER.warning("SABnzbd.ini not found. Skipping NZB config save.")
+
 
 
 async def update_variables():
